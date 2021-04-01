@@ -1,6 +1,6 @@
 #include <xc.h>
-#define LED1 RE2
-#define LED2 RB2
+#define LED1 RB2
+#define LED2 RE2
 unsigned long y;
 
 void main(void)
@@ -9,16 +9,13 @@ void main(void)
    TRISE=0x00;
    ANSELB=0x00;
    ANSELE=0x00;
-     LED1=1;
-      LED2=0;
+    LED1=1;
+    LED2=0;
     
     while(~0)
     {
-	LED1=1;
-        LED2=0;
-       for(y=0;y<20000;y++);
-	LED1=0;
-         LED2=1;
+	LED1=~LED1;
+	LED2=~LED2;
        for(y=0;y<20000;y++);
      }
  }
