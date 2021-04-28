@@ -1,0 +1,86 @@
+#include <xc.h>
+__PROG_CONFIG(1,0x3FE4); // config. uC (WDT=dis|OSC=int)
+__PROG_CONFIG(2,0x1EFF); // config. uC (PLL (OSC4)=off) pag. 130 pdf. PIC16LF1937
+unsigned long i=0;
+void init (void);
+void interrupt etti(void); // functie de intreruperi globala ptr. TOATE intreruperile de pe un
+ // microcontroler MICROCHIP
+void main(void)
+{
+	init();
+	while (1) // bucla infinita
+	 {
+		if(i>4)
+		   i=0;
+		switch(i)
+		{
+		   case 0:
+		   {
+			  RB0=0;
+			  RB1=1;
+			  RB2=0;
+			  RB3=0;
+		   }
+		   break;
+
+		   case 1:	
+		   {
+			  RB0=1;
+			  RB1=0;
+			  RB2=0;
+			  RB3=0;
+		   }
+		   break;
+
+		   case 2:
+		   {
+					RB0=1;
+			  RB1=0;
+			  RB2=1;
+			  RB3=0;
+		   }
+		   break;
+
+		   case 3:
+		   {
+					RB0=0;
+			  RB1=0;
+			  RB2=0;
+			  RB3=0;
+		   }
+		   break;
+
+		   case 4:
+		   {
+					RB0=0;
+			  RB1=0;
+			  RB2=0;
+			  RB3=1;
+		   }
+		   break;
+		}
+	 }
+}
+void init (void)
+{
+	OSCCON = 0x6B; // setez Osc. intern uC de 4MHz // pag. 110 pdf. PIC16LF1937
+	TRISB = 0b00000000; // tot Portul B este de iesire
+	ANSELB = 0b00000000; // tot Portul B digital
+	PORTB = 0b00000000; // initializez PORTB cu valori de 0 logic
+
+	OPTION_REG = 0b00000001;// Frecv. intrare T0 = Frecv. Osc./4 (=4MHz/4) = 1MHz
+	 // prescaler=4 => Frecv. T0 = 1MHz/4 = 250KHz (sau T=4us)
+	TMR0IF = 0; // Flag ce indica trecerea de la val. max. 255(0xFF) la 0(0x00)
+	TMR0 = 5; // porneste numararea de la valoarea 5; pana la maxim (255) mai sunt 250
+	TMR0IE = 1; // activez intreruperea ptr. T0
+	GIE = 1; // activez Global intreruperile
+}
+void interrupt etti(void) // ajung aici la fiecare 250*4us=1ms
+{
+	if(TMR0IF) // daca flagul TMR0IF=1
+	 {
+		 TMR0IF = 0; // obligatoriu - sterg flagul Timerului care a generat intreruperea
+		 TMR0 = 5; // 255-5=250 de incrementari
+		i++;
+	 }
+}
