@@ -1,0 +1,49 @@
+#include <xc.h>
+__PROG_CONFIG(1,0x3FE4);
+__PROG_CONFIG(2,0x1EFF);
+
+unsigned char a;
+unsigned int b;
+void init_uC(void);
+void main(void)
+{
+	init_uC();
+	while (1)
+	{
+		for(a=0x01;a<0x80;a<<=1)
+		{
+			PORTB=a;
+			for(b=0;b<6551;b++)    // repet timpul de incrementate T0 de 80us
+											// calcul: 6551*80us=524080us
+			{
+				while(!TMR0IF);
+					TMR0=250;
+				TMR0IF=0;
+			}
+		}
+		for(a=0X80;a>0x01;a>>=1)
+		{
+			PORTB=a;
+			for(b=0;b<6551;b++)      // repet timpul de incrementate T0 de 80us
+			                                 // calcul: 6551*80us=524080us
+			{
+				while(!TMR0IF);
+					TMR0=250;    // preaincarcare Timer T0  
+				TMR0IF=0;  
+			}
+		}
+	}
+}
+
+void init_uC(void)
+{
+	OSCCON=0x6B;   // setez Osc. intern uC de 4MHz
+	TRISB=0b00000000;   // tot Portul B este de iesire
+	PORTB=0b00000000;   // initializez PORTB cu valori de 0 logic
+
+	OPTION_REG=0b00000011;   // Frecv. intrare T0 = Frecv. Osc./4 (=4MHz/4) = 1MHz
+         // prescaler=16 => Frecv. T0 = 1MHz/16 =62,5KHz (sau T=16us)
+	TMR0IF=0;    // Flag ce indica trecerea de la val. max. 255(0xFF) la 0(0x00)
+	TMR0=250;     // porneste numararea de la valoarea 250; pana la maxim (255) mai sunt 5
+                             // 255-250 = 5 incrementari; cum 1 incrementare se face in 16us => 5*16us=80us
+ }
