@@ -1,0 +1,87 @@
+#include <xc.h>
+__PROG_CONFIG(1,0x3FE4); 
+__PROG_CONFIG(2,0x3703); 
+unsigned char a=0, b=0;
+unsigned char x[10] = { 0x03, 0x9F, 0x25, 0x0D, 0x99, 0x49, 0x41, 0x1f, 0x01, 0x09};
+unsigned char v[2]={0x03,0x9F};
+int i,j;
+void init (void);
+void interrupt ia2(void); 
+void main(void)
+{
+init();
+
+while (1) // bucla infinita
+ {
+if(RA0==0)
+{
+	i=0;
+	for(j=0;j<=9;j++)
+	{
+		while(a<7);
+		a=0;
+		PORTC=x[j];
+		PORTB=v[i];
+		
+	}
+	i=1;
+	for(j=0;j<=5;j++)
+	{
+		while(a<7);
+		a=0;
+		PORTC=x[j];
+		PORTB=v[i];
+		
+	}
+	for(j=4;j>=0;j--)
+	{
+		while(a<7);
+		a=0;
+		PORTC=x[j];
+		PORTB=v[i];
+		
+	}
+	i=0;
+	for(j=9;j>=0;j--)
+	{
+		while(a<7);
+		a=0;
+		PORTC=x[j];
+		PORTB=v[i];
+		
+	}
+	
+}
+}	
+}			
+ 
+
+
+void init (void)
+{
+OSCCON=0x73; 
+ANSELB = 0x00; 
+TRISB = 0x00; 
+PORTB = 0xFF; 
+TRISC = 0x00; 
+PORTC = 0xFF; 
+TRISA = 0b11111111; 
+ANSELA= 0b00000000; 
+T1CON = 0x11; // initializarea Timer T1
+ // (Fosc/4); prescaler 1:2 => Fosc_timer1=1MHz(T=1us)
+TMR1IE = 1; // activez intreruperea ptr. T1
+PEIE = 1; // intreruperea T1 face parte din "extra intreruperi"
+GIE = 1; // activez Global intreruperile
+}
+void interrupt ia2(void) // every 50ms !!!
+{ //
+if(TMR1IF) // timerul T1 a generat intreruperea ?
+ {
+ TMR1IF = 0; // obligatoriu - sterg flagul Timerului care a generat intreruperea
+ TMR1H = 0x3C; // 65535us-50000us=15535us=3CAF (in hexa) [incarc octetul superior]
+ TMR1L = 0xAF; // (50000us=50ms) [incarc octetul inferior al timerului T1]
+ a++; // la fiecare 50ms se incrementeaza variabila a
+
+
+ }
+}
