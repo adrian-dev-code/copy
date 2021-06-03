@@ -1,0 +1,98 @@
+*Program - UART - IA2*/
+#include <xc.h>
+#include <string.h>
+#include<stdio.h>
+#include<stdlib.h>
+__PROG_CONFIG(1,0x3FE4); 	
+__PROG_CONFIG(2,0x3EFF); 	
+
+unsigned char a,b,c,d,t;
+char w[2];
+
+void init(void);
+void interrupt ia2(void);
+void send_string(const char *buffer, int size);
+
+
+void main(void)
+{
+   init();
+   while(1)
+   {
+      if(RCIF)
+      {
+	 a++;
+	 if(a==1)
+	 {
+	    b=RCREG-'0';
+	    TXREG=b+'0';
+	 }
+	 if(a==2)
+	 {
+	    c=RCREG-'0';
+	    TXREG=c+'0';
+	    d=b*c;
+
+	   
+	     itoa(w,d,10);
+	    TXREG='=';
+	    send_string(w,2);
+	 }
+	  t=RCREG;
+      }
+   }
+}
+
+
+
+
+
+
+void init (void)
+{
+	OSCCON=0x73;   	// REGLEAZA OSCILATORUL PE 8 MHz (PLL dezactivat)
+	ANSELB = 0x00; 	// pinii portului B sa fie digitali
+	TRISB = 0x00;  	// tot portul B este de iesire
+	PORTB = 0x00;	// 
+	TRISC = 0b10111111; // RC7=RX=in || RC6=TX=out
+	PORTC = 0x00;	//    
+   	ANSELD = 0x00; 	// pinii portului D sa fie digitali
+	TRISD = 0x00;  	// tot portul D este de iesire
+	PORTD = 0xFF;	// am digit Anod Comun, vreau ca segmentele sa fie stinse
+/*start UART initialization, without INTERRUPT*/	
+	SPBRG   = 12;   	// Baud Rate  (viteza transmisie date)
+	TXEN    = 1;    	// Serial Trasmit Enable
+	BRGH    = 0;    	// High Baud Rate Transmission
+	SPEN    = 1;    	// Serial Port Enabled
+	CREN    = 1;    	// Continuous Receive Enable bit
+	BRG16   = 0;    	// 16-bit Baud Rate Generator bit
+	SYNC    = 0;    	// EUSART Mode Select bit [0=Asynchronous mode]
+/*end UART initialization*/	
+	T1CON = 0x11;  	// initializarea Timer T1
+                    	// (Fosc/4); prescaler 1:2 => Fosc_timer1=1MHz(T=1us)
+	TMR1IE = 1;    	// activez intreruperea ptr. T1
+	PEIE = 1;      	// intreruperea T1 face parte din "extra intreruperi"
+	GIE = 1;       	// activez Global intreruperile
+}
+
+void interrupt ia2(void)            	// every 50ms !!!
+{                           		//
+	if(TMR1IF)          	// timerul T1 a generat intreruperea ?
+	{
+	 	TMR1IF = 0;    	// obligatoriu - sterg flagul Timerului care a generat intreruperea
+	 	TMR1H = 0x3C;  	// 65535us-50000us=15535us=3CAF (in hexa) [incarc octetul superior]
+	 	TMR1L = 0xAF;  	// (50000us=50ms) [incarc octetul inferior al timerului T1]
+	//	a++;            	// la fiecare 50ms se incrementeaza variabila a
+	}
+}
+
+void send_string(const char *buffer, int size)
+{
+    while(size)
+    {
+        TXREG = *buffer;
+        while(!TXIF);       		// TXIF bit is located in PIR1 register // wait until transmission is completed        
+        buffer++;
+        size--;
+    }
+}
