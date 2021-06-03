@@ -1,0 +1,99 @@
+#include <xc.h>
+__PROG_CONFIG(1,0x3FE4);
+__PROG_CONFIG(2,0x1EFF);
+unsigned char a=0;
+unsigned int b;
+unsigned char cifra1, cifra2, cifra3, cifra4;
+unsigned char cifra[10] = { 0xC0, 0xF9, 0xA4, 0xB0, 0x99, 0x92, 0x82, 0xF8, 0x80, 0x90};
+unsigned char digit[5] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xFF};
+void init (void);
+void interrupt ia2(void);
+unsigned int read_adc(void);
+
+void main(void)
+{
+	init();
+	while (1)
+	{
+		b = read_adc(); 
+		// b = b * 13; 
+		b=b*10;
+		cifra3 = (b % 10);
+		cifra2 = (b / 10)%10;
+		cifra1 = (b / 100)%10; 
+	}
+}
+
+unsigned int read_adc(void)
+{
+	GO_nDONE = 1;
+	while(GO_nDONE);
+	return ADRESH;
+}
+
+void init (void)
+{
+	OSCCON = 0x73; 
+	ANSELA = 0xF0; 
+	TRISA = 0xF0; 
+	ANSELB = 0x00; 
+	TRISB = 0x00; 
+	PORTA = 0xFF; 
+	PORTB = 0xFF; 
+	ANSELD = 0x00; 
+	TRISD = 0xFF; 
+	T1CON = 0x11; 
+	ADCON0 = 0x11; 
+	ADCON1 = 0x60; 
+	TMR1IE = 1; 
+	PEIE = 1; 
+	GIE = 1; 
+}
+
+void interrupt ia2(void)
+{ 
+	if(TMR1IF) 
+	{
+	TMR1IF = 0; 
+	TMR1H = 0xF6; 
+	TMR1L = 0x3B; 
+	if(!RD4)
+	switch(a++)
+		{ case 0:
+		PORTA = digit[4]; 
+		PORTB = cifra[cifra3];
+		PORTA = digit[3];
+		break;
+		case 1:
+		PORTA = digit[4]; 
+		PORTB = cifra[cifra1];
+		PORTA = digit[1];
+		break;
+		case 2:
+		PORTA = digit[4]; 
+		PORTB = cifra[cifra2];
+		PORTA = digit[2];
+		a=0;
+		break;
+		default: break;
+		}
+
+	else
+	switch(a++)
+	{
+	case 0:
+	PORTA = digit[4]; 
+	PORTB = cifra[cifra1];
+	PORTA = digit[1];
+	break;
+	case 1:
+	PORTA = digit[4]; 
+	PORTB = cifra[cifra2];
+	PORTA = digit[2];
+	a=0;
+	break;
+	default: break;
+	}
+
+}
+}
